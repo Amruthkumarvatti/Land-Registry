@@ -10,6 +10,9 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return "Laravel app working!";
+});
 // ─── Public Routes ───────────────────────────────────────────────────────────
 Route::get('/', fn () => redirect()->route('login'));
 
