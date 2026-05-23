@@ -1,8 +1,9 @@
-FROM php:8.2-cli
+FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y \
-    git unzip sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite
+    git \
+    unzip \
+    && docker-php-ext-install pdo pdo_mysql
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -10,13 +11,17 @@ WORKDIR /app
 
 COPY . .
 
-RUN composer install
+RUN composer install --no-interaction --prefer-dist
 
-RUN mkdir -p database
-RUN touch database/database.sqlite
+RUN a2enmod rewrite
 
-ENV DB_CONNECTION=sqlite
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /app/public|g' /etc/apache2/sites-available/000-default.conf
 
-EXPOSE 10000
+RUN echo '<Directory /app/public>' >> /etc/apache2/apache2.conf && \
+    echo '    AllowOverride All' >> /etc/apache2/apache2.conf && \
+    echo '    Require all granted' >> /etc/apache2/apache2.conf && \
+    echo '</Directory>' >> /etc/apache2/apache2.conf
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=10000
+EXPOSE 80
+
+CMD ["sh", "-c", "php artisan migrate --force && apache2-foreground"]
